@@ -76,16 +76,14 @@ IF(NOT CHESS_VALIDATOR_ONLY)
     endif()
     include_directories(${SDL2_INCLUDE_DIR})
 
-    CPMAddPackage(GITHUB_REPOSITORY libsdl-org/SDL_image
-            GIT_TAG release-2.8.8
-            OPTIONS
-            "SDL2IMAGE_INSTALL OFF"
-            "SDL2IMAGE_SAMPLES OFF"
-            "SDL2IMAGE_VENDORED ON"
-            "GIT_SUBMODULES_RECURSE ON"
+    # NanoSVG - header-only SVG parser and rasterizer
+    CPMAddPackage(
+            NAME nanosvg
+            GITHUB_REPOSITORY memononen/nanosvg
+            GIT_TAG master
+            DOWNLOAD_ONLY YES
     )
-    find_package(SDL_image REQUIRED)
-    include_directories(${SDL_image_SOURCE_DIR})
+    include_directories(${nanosvg_SOURCE_DIR}/src)
 
     # add imgui
     CPMAddPackage(
@@ -138,7 +136,7 @@ if(NOT CHESS_VALIDATOR_ONLY)
 # chess gui
 file(GLOB_RECURSE CHESS_GUI_FILES CONFIGURE_DEPENDS "chess-gui/*.cpp" "chess-gui/*.h")
 add_executable(chessgui ${CHESS_GUI_FILES})
-target_link_libraries(chessgui PUBLIC chessbot IMGUI SDL2::SDL2 SDL2_image)
+target_link_libraries(chessgui PUBLIC chessbot IMGUI SDL2::SDL2)
 endif() # NOT CHESS_VALIDATOR_ONLY
 
 CPMAddPackage(

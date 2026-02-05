@@ -3,7 +3,11 @@
 #include <algorithm>
 #include <iostream>
 
-#include "SDL_image.h"
+#define NANOSVG_IMPLEMENTATION
+#include "nanosvg.h"
+#define NANOSVGRAST_IMPLEMENTATION
+#include "nanosvgrast.h"
+
 #include "SDL_surface.h"
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
@@ -98,12 +102,56 @@ struct Texture {
   }
 };
 
-Texture *SvgStringToTexture(std::string svgString, SDL_Renderer *renderer) {
+Texture *SvgStringToTexture(std::string svgString, SDL_Renderer *renderer, int size = 64) {
   Texture *tex = new Texture();
-  SDL_RWops *rw = SDL_RWFromConstMem(svgString.c_str(), svgString.size());
-  // todo: check if it is correct
-  tex->surface = IMG_Load_RW(rw, 1);
+  
+  // Parse SVG from string
+  NSVGimage *image = nsvgParse(const_cast<char*>(svgString.c_str()), "px", 96.0f);
+  if (!image) {
+    std::cerr << "Failed to parse SVG" << std::endl;
+    return tex;
+  }
+  
+  // Create rasterizer
+  NSVGrasterizer *rast = nsvgCreateRasterizer();
+  if (!rast) {
+    nsvgDelete(image);
+    std::cerr << "Failed to create SVG rasterizer" << std::endl;
+    return tex;
+  }
+  
+  // Calculate scale to fit in desired size
+  float scale = size / std::max(image->width, image->height);
+  int w = static_cast<int>(image->width * scale);
+  int h = static_cast<int>(image->height * scale);
+  
+  // Allocate pixel buffer (RGBA)
+  unsigned char *pixels = new unsigned char[w * h * 4];
+  
+  // Rasterize SVG to pixel buffer
+  nsvgRasterize(rast, image, 0, 0, scale, pixels, w, h, w * 4);
+  
+  // Create SDL surface from pixel buffer
+  tex->surface = SDL_CreateRGBSurfaceFrom(
+      pixels, w, h, 32, w * 4,
+      0x000000FF,  // R mask
+      0x0000FF00,  // G mask
+      0x00FF0000,  // B mask
+      0xFF000000   // A mask
+  );
+  
+  // Create texture from surface
   tex->texture = SDL_CreateTextureFromSurface(renderer, tex->surface);
+  
+  // Cleanup
+  nsvgDeleteRasterizer(rast);
+  nsvgDelete(image);
+  delete[] pixels;
+  
+  // Note: We need to clear surface since we're freeing the pixel buffer
+  // The texture has a copy of the data
+  SDL_FreeSurface(tex->surface);
+  tex->surface = nullptr;
 
   return tex;
 }
