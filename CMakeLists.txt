@@ -174,9 +174,14 @@ if(EMSCRIPTEN)
         )
     endif()
 
-    # CLI: build as HTML
+    # CLI: build as HTML with custom shell (no prompt() for stdin)
     set_target_properties(chesscli PROPERTIES SUFFIX ".html")
-    target_link_options(chesscli PRIVATE -sALLOW_MEMORY_GROWTH=1)
+    target_link_options(chesscli PRIVATE
+        -sALLOW_MEMORY_GROWTH=1
+        -sEXIT_RUNTIME=1
+        -sINVOKE_RUN=0
+        --shell-file ${CMAKE_SOURCE_DIR}/chess-cli/shell.html
+    )
 
     # WASM library: expose Move() to JavaScript via Embind
     add_executable(chesswasm chess-wasm/bindings.cpp)
