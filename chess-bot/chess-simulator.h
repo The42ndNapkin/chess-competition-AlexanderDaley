@@ -16,4 +16,9 @@ chess::Move findBestMove(const chess::Board board, int depth, chess::Movelist mo
 float eval(chess::Board board, chess::Movelist moves);
 float materialScore(chess::Board board);
 float mobilityScore(chess::Board board, chess::Movelist moves);
+float checkPieceTables(chess::Board board);
+float checkRookOpenFiles(chess::Board board, chess::Movelist moves);
+float checkCaptures(chess::Board board, chess::Movelist moves);
+bool checkTime();
+
 } // namespace ChessSimulator
